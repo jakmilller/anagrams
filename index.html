@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anagrams</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&family=Georgia:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* Wordle-inspired Colors */
+        :root {
+            --wordle-green: #6aaa64; /* Solid green for vertical path and final word */
+            --wordle-green-rgb: 106, 170, 100; /* RGB components of wordle-green */
+            
+            --wordle-yellow: #c9b458; 
+            --wordle-dark-gray: #787c7e;
+            --wordle-light-gray: #d3d6da;
+            --wordle-white: #ffffff;
+            --wordle-black: #121212;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--wordle-white); 
+            color: var(--wordle-black);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 15px;
+            overflow-x: hidden;
+        }
+        .game-container {
+            padding: 10px;
+            width: 100%;
+            max-width: 600px; 
+        }
+        header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--wordle-light-gray);
+            padding-bottom: 15px;
+        }
+        header h1 {
+            font-family: 'Inter', sans-serif; 
+            font-size: 1.8rem; 
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        header p {
+            font-family: 'Inter', sans-serif;
+            text-align: center;
+            margin-bottom: 10px; 
+            font-size: 0.85rem;
+            color: var(--wordle-dark-gray); 
+        }
+        .streak-counter-area {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--wordle-dark-gray);
+            text-align: center;
+        }
+
+        .game-board {
+            display: flex;
+            flex-direction: column;
+            gap: 10px; 
+        }
+
+        .puzzle-row {
+            display: grid;
+            grid-template-columns: minmax(120px, 1fr) 2fr; 
+            align-items: center;
+            padding: 8px 0; 
+            border-bottom: 1px solid #f0f0f0; 
+        }
+         .puzzle-row.active-puzzle {
+            /* border-left: 3px solid var(--wordle-yellow); */ 
+         }
+
+        .scrambled-word-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem; 
+            font-weight: 500; 
+            padding-right: 15px; 
+            white-space: nowrap; 
+            position: relative; 
+            color: var(--wordle-dark-gray); 
+        }
+        .scrambled-letter { 
+            display: inline-block; 
+            position: relative; 
+            transition: opacity 0.4s ease-in-out; 
+        }
+        .scrambled-letter.outlined {
+            opacity: 0.4; 
+            color: var(--wordle-light-gray);
+        }
+         .moving-letter-clone { 
+            position: fixed; 
+            z-index: 1000;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.2rem; 
+            font-weight: 700;
+            background-color: var(--wordle-white); 
+            color: var(--wordle-black);
+            padding: 5px 7px; 
+            border: 2px solid var(--wordle-black); 
+            border-radius: 3px;
+            text-transform: uppercase;
+            transition: transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1); 
+            pointer-events: none; 
+        }
+
+        .solution-slots-container {
+            display: grid; 
+            gap: 4px; 
+        }
+        .solution-slot-input { 
+            width: 40px; 
+            height: 40px;
+            border: 2px solid var(--wordle-light-gray); 
+            text-align: center;
+            font-family: 'Roboto Mono', monospace; 
+            font-size: 1.2rem; 
+            font-weight: 700;
+            text-transform: uppercase;
+            background-color: var(--wordle-white); 
+            padding: 0; 
+            caret-color: var(--wordle-black);
+            border-radius: 0px; 
+            transition: background-color 0.1s, border-color 0.1s;
+        }
+        .solution-slot-input:focus {
+            outline: none;
+            border-color: var(--wordle-black); 
+        }
+        .solution-slot-input.highlighted-path {
+            background-color: #e9ecef; 
+            border-color: var(--wordle-dark-gray); 
+        }
+        .solution-slot-input.solved { 
+            background-color: rgba(var(--wordle-green-rgb), 0.5); /* Translucent green */
+            border-color: rgba(var(--wordle-green-rgb), 0.7);   /* Slightly more opaque border */
+            color: var(--wordle-white); 
+            font-weight: 700;
+        }
+        .solution-slot-input.highlighted-path.solved { 
+            background-color: var(--wordle-green); /* Original Wordle green for vertical path */
+            border-color: var(--wordle-black); 
+            color: var(--wordle-white); 
+        }
+        .solution-slot-input.slot-incorrect-flash {
+            animation: incorrectFlashWordle 0.6s ease-in-out;
+        }
+
+        @keyframes incorrectFlashWordle { 
+            0%, 100% { background-color: var(--wordle-white); border-color: var(--wordle-light-gray); color: var(--wordle-black); }
+            50% { background-color: var(--wordle-dark-gray); border-color: var(--wordle-dark-gray); color: var(--wordle-white); }
+        }
+
+        .solution-slot-input.empty-placeholder { 
+            border-color: transparent;
+            background-color: transparent;
+            pointer-events: none; 
+        }
+
+        .message-area {
+            margin-top: 20px; 
+            min-height: 30px; 
+            display: flex; 
+            justify-content: center;
+            align-items: center;
+        }
+        .message-box {
+            padding: 8px 12px; 
+            text-align: center;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            border-radius: 4px;
+            background-color: var(--wordle-dark-gray); 
+            color: var(--wordle-white); 
+            max-width: 90%; 
+        }
+        .message-success { 
+            background-color: var(--wordle-green); 
+            color: var(--wordle-white);
+        }
+        .message-error { 
+             background-color: var(--wordle-dark-gray); 
+             color: var(--wordle-white);
+        }
+
+
+        #end-game-display {
+            margin-top: 30px; 
+            padding: 15px;
+            background-color: var(--wordle-white); 
+            text-align: center;
+            border-radius: 6px;
+        }
+        #animated-final-word-target {
+            display: flex;
+            justify-content: center;
+            gap: 5px; 
+            margin-bottom: 20px;
+        }
+        .final-word-letter-placeholder {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 2rem; 
+            font-weight: 700;
+            color: var(--wordle-white); 
+            background-color: var(--wordle-green);
+            border: 2px solid var(--wordle-green);
+            width: 45px; 
+            height: 45px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 0;
+        }
+        #fun-fact-area {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            color: var(--wordle-dark-gray);
+            margin-bottom: 10px;
+            padding: 8px;
+        }
+        #come-back-message {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--wordle-dark-gray);
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <header>
+            <h1>Anagrams.</h1>
+            <p>Unscramble words. Highlighted letters form the final solution!</p>
+            <div class="streak-counter-area">Streak: <span id="streak-count">0</span></div>
+        </header>
+        
+        <div id="game-board" class="game-board">
+            </div>
+        
+        <div id="message-area"></div>
+
+        <div id="end-game-display" class="hidden">
+            <div id="animated-final-word-target"></div>
+            <div id="fun-fact-area"></div>
+            <div id="come-back-message"></div>
+        </div>
+    </div>
+
+    <script>
+        const TARGET_VERTICAL_ALIGNMENT_COLUMN_INDEX = 3; 
+
+        const GAME_SETUP = {
+            puzzles: [
+                { id: "A", scrambled_text: "ORTOB",  solution: "ROBOT",  vertical_letter_solution_index: 1 }, 
+                { id: "B", scrambled_text: "LEPAT",  solution: "PLATE",  vertical_letter_solution_index: 0 }, 
+                { id: "C", scrambled_text: "TAPYR",  solution: "PARTY",  vertical_letter_solution_index: 3 }, 
+                { id: "D", scrambled_text: "ICED",   solution: "DICE",   vertical_letter_solution_index: 1 }, 
+                { id: "E", scrambled_text: "RBEAC",  solution: "BRACE",  vertical_letter_solution_index: 3 }  
+            ],
+            final_vertical_word_solution: "OPTIC",
+            final_vertical_word_description: "Relating to the eye or vision." 
+        };
+
+        let currentGamePuzzles = [];
+        let activePuzzleRowIndex = -1; 
+        let max_cols_for_solution_slots = 0; 
+        let overall_grid_start_offset = 0; 
+        let streakCount = 0;
+
+        const gameBoardEl = document.getElementById('game-board');
+        const messageAreaEl = document.getElementById('message-area');
+        const endGameDisplayEl = document.getElementById('end-game-display');
+        const animatedFinalWordTargetEl = document.getElementById('animated-final-word-target');
+        const funFactAreaEl = document.getElementById('fun-fact-area');
+        const comeBackMessageEl = document.getElementById('come-back-message');
+        const streakCountEl = document.getElementById('streak-count');
+
+
+        function initializeGame() {
+            activePuzzleRowIndex = -1;
+            endGameDisplayEl.classList.add('hidden'); 
+            animatedFinalWordTargetEl.innerHTML = ''; 
+            funFactAreaEl.innerHTML = '';
+            comeBackMessageEl.innerHTML = '';
+
+            updateStreakDisplay(); 
+
+            currentGamePuzzles = JSON.parse(JSON.stringify(GAME_SETUP.puzzles));
+            currentGamePuzzles.forEach((p, idx) => {
+                p.is_solved = false;
+                p.current_guess_array = Array(p.solution.length).fill('');
+                p.original_scrambled_letters = p.scrambled_text.split('').map((char, i) => ({
+                    char: char,
+                    id: `sletter-${idx}-${i}`, 
+                    used_for_animation: false,
+                    dom_element: null
+                }));
+                if (p.vertical_letter_solution_index === -1 || p.vertical_letter_solution_index >= p.solution.length) {
+                     console.error(`Error: Invalid vertical_letter_solution_index for ${p.solution} in puzzle ${p.id}.`);
+                }
+                p.solution_slots_start_col = TARGET_VERTICAL_ALIGNMENT_COLUMN_INDEX - p.vertical_letter_solution_index;
+            });
+            
+            let min_col = Infinity;
+            let max_col = -Infinity;
+            currentGamePuzzles.forEach(p => {
+                min_col = Math.min(min_col, p.solution_slots_start_col);
+                max_col = Math.max(max_col, p.solution_slots_start_col + p.solution.length - 1);
+            });
+            max_cols_for_solution_slots = max_col - min_col + 1;
+            overall_grid_start_offset = -min_col; 
+
+            renderGameBoard();
+            messageAreaEl.innerHTML = ''; 
+        }
+        
+        function clearMessageArea() {
+            messageAreaEl.innerHTML = '';
+        }
+
+        function renderGameBoard() {
+            gameBoardEl.innerHTML = '';
+            currentGamePuzzles.forEach((puzzle, puzzleIdx) => {
+                const puzzleRow = document.createElement('div');
+                puzzleRow.classList.add('puzzle-row');
+                puzzleRow.id = `puzzle-row-${puzzleIdx}`;
+                if (puzzleIdx === activePuzzleRowIndex) {
+                    puzzleRow.classList.add('active-puzzle');
+                }
+
+                const scrambledArea = document.createElement('div');
+                scrambledArea.classList.add('scrambled-word-display');
+                scrambledArea.id = `scrambled-area-${puzzleIdx}`;
+                
+                puzzle.original_scrambled_letters.forEach(sLetter => {
+                    const letterSpan = document.createElement('span');
+                    letterSpan.classList.add('scrambled-letter');
+                    letterSpan.id = sLetter.id;
+                    letterSpan.textContent = sLetter.char;
+                    if (sLetter.used_for_animation) {
+                        letterSpan.classList.add('outlined');
+                    }
+                    sLetter.dom_element = letterSpan; 
+                    scrambledArea.appendChild(letterSpan);
+                });
+                puzzleRow.appendChild(scrambledArea);
+
+                const solutionSlotsContainer = document.createElement('div');
+                solutionSlotsContainer.classList.add('solution-slots-container');
+                solutionSlotsContainer.style.gridTemplateColumns = `repeat(${max_cols_for_solution_slots}, 1fr)`;
+                
+                for (let i = 0; i < max_cols_for_solution_slots; i++) {
+                    const current_conceptual_col = i - overall_grid_start_offset;
+                    const slotInput = document.createElement('input');
+                    slotInput.type = 'text';
+                    slotInput.maxLength = 1;
+                    slotInput.classList.add('solution-slot-input');
+
+                    if (current_conceptual_col >= puzzle.solution_slots_start_col && 
+                        current_conceptual_col < (puzzle.solution_slots_start_col + puzzle.solution.length)) {
+                        
+                        const charIndexInSolution = current_conceptual_col - puzzle.solution_slots_start_col;
+                        slotInput.id = `input-slot-${puzzleIdx}-${charIndexInSolution}`;
+                        slotInput.dataset.puzzleIndex = puzzleIdx;
+                        slotInput.dataset.charIndex = charIndexInSolution;
+                        slotInput.value = puzzle.current_guess_array[charIndexInSolution] || '';
+
+                        if (puzzle.is_solved) {
+                            slotInput.value = puzzle.solution[charIndexInSolution];
+                            slotInput.disabled = true;
+                            slotInput.classList.add('solved');
+                        } else {
+                            slotInput.disabled = false;
+                            slotInput.addEventListener('input', handleSlotInput);
+                            slotInput.addEventListener('keydown', handleSlotKeydown);
+                            slotInput.addEventListener('focus', () => {
+                                clearMessageArea(); 
+                                setActivePuzzle(puzzleIdx, charIndexInSolution);
+                            });
+                        }
+                        
+                        if (current_conceptual_col === TARGET_VERTICAL_ALIGNMENT_COLUMN_INDEX) {
+                            slotInput.classList.add('highlighted-path');
+                        }
+                        if (puzzle.is_solved && slotInput.classList.contains('highlighted-path')) {
+                            slotInput.classList.add('solved'); 
+                        }
+
+
+                    } else {
+                        slotInput.classList.add('empty-placeholder'); 
+                        slotInput.disabled = true; 
+                    }
+                    solutionSlotsContainer.appendChild(slotInput);
+                }
+                puzzleRow.appendChild(solutionSlotsContainer);
+                gameBoardEl.appendChild(puzzleRow);
+            });
+        }
+        
+        function setActivePuzzle(puzzleIdx, charIdxToFocus = 0) {
+            if (activePuzzleRowIndex !== -1 && activePuzzleRowIndex !== puzzleIdx) {
+                const prevActiveRow = document.getElementById(`puzzle-row-${activePuzzleRowIndex}`);
+                if (prevActiveRow) prevActiveRow.classList.remove('active-puzzle');
+            }
+            activePuzzleRowIndex = puzzleIdx;
+            const currentActiveRow = document.getElementById(`puzzle-row-${puzzleIdx}`);
+            if (currentActiveRow) currentActiveRow.classList.add('active-puzzle');
+        }
+
+        function handleSlotInput(event) {
+            clearMessageArea(); 
+            const target = event.target;
+            const puzzleIdx = parseInt(target.dataset.puzzleIndex);
+            const charIdx = parseInt(target.dataset.charIndex);
+            const puzzle = currentGamePuzzles[puzzleIdx];
+
+            if (puzzle.is_solved) return;
+
+            target.value = target.value.toUpperCase().slice(0,1); 
+            puzzle.current_guess_array[charIdx] = target.value;
+
+            if (target.value && charIdx < puzzle.solution.length - 1) {
+                const nextSlot = document.getElementById(`input-slot-${puzzleIdx}-${charIdx + 1}`);
+                if (nextSlot && !nextSlot.disabled) nextSlot.focus();
+            }
+            checkIfWordComplete(puzzleIdx);
+        }
+
+        function handleSlotKeydown(event) {
+            clearMessageArea(); 
+            const target = event.target;
+            const puzzleIdx = parseInt(target.dataset.puzzleIndex);
+            const charIdx = parseInt(target.dataset.charIndex);
+            const puzzle = currentGamePuzzles[puzzleIdx];
+
+            if (puzzle.is_solved) return;
+
+            if (event.key === 'Backspace') {
+                if (!target.value && charIdx > 0) { 
+                    puzzle.current_guess_array[charIdx] = ''; 
+                    const prevSlot = document.getElementById(`input-slot-${puzzleIdx}-${charIdx - 1}`);
+                    if (prevSlot && !prevSlot.disabled) {
+                        prevSlot.focus();
+                        prevSlot.value = ''; 
+                        puzzle.current_guess_array[charIdx-1] = '';
+                    }
+                } else { 
+                    puzzle.current_guess_array[charIdx] = ''; 
+                }
+            } else if (event.key === 'Enter') {
+                event.preventDefault(); 
+                checkWordSolution(puzzleIdx);
+            } else if (event.key.length === 1 && event.key.match(/[a-z]/i) && charIdx < puzzle.solution.length - 1 && target.value) {
+                const nextSlot = document.getElementById(`input-slot-${puzzleIdx}-${charIdx + 1}`);
+                if (nextSlot && !nextSlot.disabled) {
+                    setTimeout(() => nextSlot.focus(), 0);
+                }
+            }
+        }
+
+        function checkIfWordComplete(puzzleIdx) {
+            const puzzle = currentGamePuzzles[puzzleIdx];
+            const isComplete = puzzle.current_guess_array.every(char => char !== '');
+            if (isComplete) {
+                checkWordSolution(puzzleIdx);
+            }
+        }
+
+        async function checkWordSolution(puzzleIdx) {
+            const puzzle = currentGamePuzzles[puzzleIdx];
+            if (puzzle.is_solved) return;
+
+            const guessedWord = puzzle.current_guess_array.join('');
+            const puzzleRowEl = document.getElementById(`puzzle-row-${puzzleIdx}`);
+            
+            if (guessedWord === puzzle.solution) {
+                puzzle.is_solved = true;
+                
+                for(let i=0; i < puzzle.solution.length; i++) {
+                    const slotInput = document.getElementById(`input-slot-${puzzleIdx}-${i}`);
+                    if(slotInput) {
+                        slotInput.disabled = true;
+                        slotInput.classList.add('solved');
+                    }
+                }
+
+                const animationPromises = [];
+                for (let i = 0; i < puzzle.solution.length; i++) {
+                    const solutionChar = puzzle.solution[i];
+                    let sLetterIndexToAnimate = -1;
+                    for(let j=0; j < puzzle.original_scrambled_letters.length; j++) {
+                        if (puzzle.original_scrambled_letters[j].char === solutionChar && !puzzle.original_scrambled_letters[j].used_for_animation) {
+                            sLetterIndexToAnimate = j;
+                            break;
+                        }
+                    }
+                    if (sLetterIndexToAnimate === -1) { 
+                        for(let j=0; j < puzzle.original_scrambled_letters.length; j++) {
+                            if (!puzzle.original_scrambled_letters[j].used_for_animation) {
+                                sLetterIndexToAnimate = j;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (sLetterIndexToAnimate !== -1) {
+                        const sLetterObj = puzzle.original_scrambled_letters[sLetterIndexToAnimate];
+                        sLetterObj.used_for_animation = true;
+                        const sLetterDomEl = sLetterObj.dom_element;
+                        const targetSlotElement = document.getElementById(`input-slot-${puzzleIdx}-${i}`);
+                        if (sLetterDomEl && targetSlotElement) {
+                            animationPromises.push(animateLetter(sLetterDomEl, targetSlotElement, i * 50)); 
+                        }
+                    }
+                }
+                await Promise.all(animationPromises);
+                if (puzzleRowEl) puzzleRowEl.classList.remove('active-puzzle');
+                activePuzzleRowIndex = -1;
+
+                checkAllSolved();
+
+            } else {
+                displayMessage('Incorrect', 'error'); 
+                streakCount = 0; 
+                updateStreakDisplay();
+                for(let i=0; i < puzzle.solution.length; i++) {
+                    const slotInput = document.getElementById(`input-slot-${puzzleIdx}-${i}`);
+                    if(slotInput) {
+                        slotInput.classList.add('slot-incorrect-flash');
+                        setTimeout(() => slotInput.classList.remove('slot-incorrect-flash'), 700);
+                    }
+                }
+            }
+        }
+
+        function animateLetter(letterEl, targetSlotEl, delay = 0) { 
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const startRect = letterEl.getBoundingClientRect();
+                    const targetRect = targetSlotEl.getBoundingClientRect();
+                    
+                    const movingLetterClone = document.createElement('span'); 
+                    movingLetterClone.textContent = letterEl.textContent; 
+                    movingLetterClone.classList.add('moving-letter-clone'); 
+                    document.body.appendChild(movingLetterClone); 
+                    
+                    movingLetterClone.style.left = `${startRect.left}px`;
+                    movingLetterClone.style.top = `${startRect.top}px`;
+                    movingLetterClone.style.width = `${startRect.width}px`;
+                    movingLetterClone.style.height = `${startRect.height}px`;
+
+                    letterEl.classList.add('outlined'); 
+                    
+                    void movingLetterClone.offsetWidth; 
+
+                    const deltaX = targetRect.left - startRect.left;
+                    const deltaY = targetRect.top - startRect.top;
+                    movingLetterClone.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+                    
+                    movingLetterClone.addEventListener('transitionend', function onTransitionEnd() {
+                        movingLetterClone.removeEventListener('transitionend', onTransitionEnd);
+                        movingLetterClone.remove(); 
+                        resolve();
+                    }, { once: true });
+                }, delay);
+            });
+        }
+
+        function updateStreakDisplay() {
+            streakCountEl.textContent = streakCount;
+        }
+
+        async function animateFinalWordSequence() {
+            animatedFinalWordTargetEl.innerHTML = ''; 
+            funFactAreaEl.innerHTML = '';
+            comeBackMessageEl.innerHTML = '';
+            endGameDisplayEl.classList.remove('hidden');
+
+            const finalWord = GAME_SETUP.final_vertical_word_solution;
+            const letterAnimationPromises = [];
+
+            const targetLetterPlaceholders = [];
+            for (let i = 0; i < finalWord.length; i++) {
+                const placeholder = document.createElement('span');
+                placeholder.classList.add('final-word-letter-placeholder');
+                placeholder.innerHTML = '&nbsp;'; 
+                animatedFinalWordTargetEl.appendChild(placeholder);
+                targetLetterPlaceholders.push(placeholder);
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 50)); 
+
+
+            for (let i = 0; i < finalWord.length; i++) {
+                const letterToAnimate = finalWord[i];
+                const sourcePuzzle = currentGamePuzzles[i]; 
+                const sourceLetterIndexInSolution = sourcePuzzle.vertical_letter_solution_index;
+                const sourceSlotEl = document.getElementById(`input-slot-${i}-${sourceLetterIndexInSolution}`);
+                const targetPlaceholderEl = targetLetterPlaceholders[i];
+
+                if (sourceSlotEl && targetPlaceholderEl) {
+                    const movingClone = document.createElement('span');
+                    movingClone.textContent = letterToAnimate;
+                    movingClone.classList.add('moving-letter-clone'); 
+                    movingClone.style.backgroundColor = 'var(--wordle-green)';
+                    movingClone.style.color = 'var(--wordle-white)';
+                    movingClone.style.border = '2px solid var(--wordle-green)';
+                    movingClone.style.width = '45px'; 
+                    movingClone.style.height = '45px';
+                    movingClone.style.display = 'flex';
+                    movingClone.style.justifyContent = 'center';
+                    movingClone.style.alignItems = 'center';
+                    movingClone.style.fontSize = '2rem';
+
+
+                    document.body.appendChild(movingClone);
+
+                    const startRect = sourceSlotEl.getBoundingClientRect();
+                    const endRect = targetPlaceholderEl.getBoundingClientRect();
+
+                    movingClone.style.left = `${startRect.left}px`;
+                    movingClone.style.top = `${startRect.top}px`;
+                    
+                    void movingClone.offsetWidth; 
+
+                    const deltaX = endRect.left + (endRect.width / 2) - (startRect.left + startRect.width / 2);
+                    const deltaY = endRect.top + (endRect.height / 2) - (startRect.top + startRect.height / 2);
+                    
+                    movingClone.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+
+                    const promise = new Promise(resolve => {
+                        movingClone.addEventListener('transitionend', function onEnd() {
+                            movingClone.removeEventListener('transitionend', onEnd);
+                            targetPlaceholderEl.textContent = letterToAnimate;
+                            targetPlaceholderEl.style.backgroundColor = 'var(--wordle-green)';
+                            targetPlaceholderEl.style.color = 'var(--wordle-white)';
+                            targetPlaceholderEl.style.border = '2px solid var(--wordle-green)';
+                            movingClone.remove();
+                            resolve();
+                        }, { once: true });
+                    });
+                    letterAnimationPromises.push(promise);
+                    await new Promise(r => setTimeout(r, 200)); 
+                }
+            }
+
+            await Promise.all(letterAnimationPromises);
+
+            if (GAME_SETUP.final_vertical_word_solution === "OPTIC") {
+                 funFactAreaEl.textContent = "Fun Fact: The human eye can distinguish about 10 million different colors!";
+            } else if (GAME_SETUP.final_vertical_word_solution === "POTATOE"){
+                 funFactAreaEl.textContent = "Fun Fact: Potatoes were the first vegetable grown in space, aboard the Space Shuttle Columbia in 1995!";
+            } else {
+                funFactAreaEl.textContent = "Great job solving the puzzle!"; 
+            }
+            comeBackMessageEl.textContent = "Come back tomorrow for a new puzzle!";
+        }
+
+
+        function checkAllSolved() {
+            if (currentGamePuzzles.every(p => p.is_solved)) {
+                streakCount++;
+                updateStreakDisplay();
+                animateFinalWordSequence(); 
+            }
+        }
+
+        function displayMessage(text, type = 'info') {
+            messageAreaEl.innerHTML = ''; 
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = text;
+            messageDiv.classList.remove('message-success', 'message-error', 'message-info'); 
+            messageDiv.classList.add('message-box', `message-${type}`);
+            messageAreaEl.appendChild(messageDiv);
+        }
+
+        window.onload = initializeGame;
+    </script>
+</body>
+</html>
+
