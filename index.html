@@ -5,24 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anagrams</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&family=Georgia:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&family=Georgia:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
-        /* Wordle-inspired Colors */
         :root {
-            --wordle-green: #6aaa64; /* Solid green for vertical path and final word */
-            --wordle-green-rgb: 106, 170, 100; /* RGB components of wordle-green */
-            
-            --wordle-yellow: #c9b458; 
-            --wordle-dark-gray: #787c7e;
-            --wordle-light-gray: #d3d6da;
-            --wordle-white: #ffffff;
-            --wordle-black: #121212;
+            --nyt-black: #121212;
+            --nyt-white: #ffffff;
+            --nyt-light-gray: #f0f0f0;
+            --nyt-medium-gray: #d3d3d3;
+            --nyt-dark-gray: #757575;
+            --nyt-accent-yellow: #f6e05e;
+            --wordle-green: #6aaa64;
+            --wordle-green-rgb: 106, 170, 100;
+            --wordle-dark-gray-feedback: #787c7e;
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--wordle-white); 
-            color: var(--wordle-black);
+            background-color: var(--nyt-white);
+            color: var(--nyt-black);
             display: flex;
             justify-content: center;
             align-items: flex-start;
@@ -33,220 +33,287 @@
         .game-container {
             padding: 10px;
             width: 100%;
-            max-width: 600px; 
+            max-width: 600px;
         }
         header {
             margin-bottom: 20px;
-            border-bottom: 1px solid var(--wordle-light-gray);
+            border-bottom: 1px solid var(--nyt-light-gray);
             padding-bottom: 15px;
+            text-align: center; 
         }
-        header h1 {
-            font-family: 'Inter', sans-serif; 
+        .logos-line {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px; /* Space below logos */
+        }
+        .nyt-games-pips-logo { 
+            height: 28px; 
+        }
+        .nyt-main-logo { 
+            height: 30px; 
+        }
+        .game-title-line {
+            display: flex;
+            justify-content: center;
+            align-items: baseline; /* Align title and beta tag nicely */
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+        .game-actual-title { 
+            font-family: 'Georgia', serif;
             font-size: 1.8rem; 
             font-weight: 700;
-            text-align: center;
-            margin-bottom: 5px;
+            color: var(--nyt-black);
+            line-height: 1; 
         }
-        header p {
+        .beta-tag { 
+            font-family: 'Georgia', serif;
+            font-size: 0.9rem; /* Smaller than title */
+            font-weight: normal;
+            color: var(--nyt-dark-gray);
+            /* vertical-align: super; Removed for baseline alignment */
+            font-style: italic;
+        }
+        p.game-instructions { 
             font-family: 'Inter', sans-serif;
             text-align: center;
-            margin-bottom: 10px; 
+            margin-bottom: 10px;
             font-size: 0.85rem;
-            color: var(--wordle-dark-gray); 
+            color: var(--nyt-dark-gray);
         }
         .streak-counter-area {
             font-family: 'Inter', sans-serif;
             font-size: 0.8rem;
             font-weight: 500;
-            color: var(--wordle-dark-gray);
+            color: var(--nyt-dark-gray);
             text-align: center;
         }
 
         .game-board {
             display: flex;
             flex-direction: column;
-            gap: 10px; 
+            gap: 10px;
         }
 
         .puzzle-row {
-            display: grid;
-            grid-template-columns: minmax(120px, 1fr) 2fr; 
+            display: flex; 
             align-items: center;
-            padding: 8px 0; 
-            border-bottom: 1px solid #f0f0f0; 
+            padding: 8px 0;
+            border-bottom: 1px solid var(--nyt-light-gray);
+            gap: 15px; 
         }
          .puzzle-row.active-puzzle {
-            /* border-left: 3px solid var(--wordle-yellow); */ 
+            background-color: #fef9e7; 
          }
 
         .scrambled-word-display {
             font-family: 'Roboto Mono', monospace;
-            font-size: 1rem; 
-            font-weight: 500; 
-            padding-right: 15px; 
-            white-space: nowrap; 
-            position: relative; 
-            color: var(--wordle-dark-gray); 
+            font-size: 1rem;
+            font-weight: 500;
+            white-space: nowrap;
+            position: relative;
+            color: #333333;
+            width: 140px; 
+            flex-shrink: 0; 
         }
-        .scrambled-letter { 
-            display: inline-block; 
-            position: relative; 
-            transition: opacity 0.4s ease-in-out; 
+        .scrambled-letter {
+            display: inline-block;
+            position: relative;
+            transition: opacity 0.4s ease-in-out;
         }
         .scrambled-letter.outlined {
-            opacity: 0.4; 
-            color: var(--wordle-light-gray);
+            opacity: 0.35;
+            color: var(--nyt-medium-gray);
         }
-         .moving-letter-clone { 
-            position: fixed; 
+         .moving-letter-clone {
+            position: fixed;
             z-index: 1000;
             font-family: 'Roboto Mono', monospace;
-            font-size: 1.2rem; 
+            font-size: 1.2rem;
             font-weight: 700;
-            background-color: var(--wordle-white); 
-            color: var(--wordle-black);
-            padding: 5px 7px; 
-            border: 2px solid var(--wordle-black); 
-            border-radius: 3px;
+            background-color: var(--nyt-white);
+            color: var(--nyt-black);
+            padding: 5px 7px;
+            border: 1px solid var(--nyt-black);
+            border-radius: 2px;
             text-transform: uppercase;
-            transition: transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1); 
-            pointer-events: none; 
+            transition: transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+            pointer-events: none;
         }
 
         .solution-slots-container {
-            display: grid; 
-            gap: 4px; 
+            display: grid;
+            gap: 4px;
+            /* grid-template-columns will be set by JS */
         }
-        .solution-slot-input { 
-            width: 40px; 
-            height: 40px;
-            border: 2px solid var(--wordle-light-gray); 
+        .solution-slot-input {
+            width: 38px;
+            height: 38px;
+            border: 1px solid var(--nyt-medium-gray);
             text-align: center;
-            font-family: 'Roboto Mono', monospace; 
-            font-size: 1.2rem; 
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.2rem;
             font-weight: 700;
             text-transform: uppercase;
-            background-color: var(--wordle-white); 
-            padding: 0; 
-            caret-color: var(--wordle-black);
-            border-radius: 0px; 
+            background-color: var(--nyt-white);
+            padding: 0;
+            caret-color: var(--nyt-black);
+            border-radius: 2px;
             transition: background-color 0.1s, border-color 0.1s;
+            box-sizing: border-box;
         }
         .solution-slot-input:focus {
             outline: none;
-            border-color: var(--wordle-black); 
+            border-color: var(--nyt-black);
+            box-shadow: 0 0 0 1px var(--nyt-black);
         }
         .solution-slot-input.highlighted-path {
-            background-color: #e9ecef; 
-            border-color: var(--wordle-dark-gray); 
+            background-color: var(--nyt-light-gray);
+            border-color: #bbbbbb;
         }
-        .solution-slot-input.solved { 
-            background-color: rgba(var(--wordle-green-rgb), 0.5); /* Translucent green */
-            border-color: rgba(var(--wordle-green-rgb), 0.7);   /* Slightly more opaque border */
-            color: var(--wordle-white); 
+        .solution-slot-input.solved {
+            background-color: rgba(var(--wordle-green-rgb), 0.6);
+            border-color: rgba(var(--wordle-green-rgb), 0.8);
+            color: var(--nyt-white);
             font-weight: 700;
         }
-        .solution-slot-input.highlighted-path.solved { 
-            background-color: var(--wordle-green); /* Original Wordle green for vertical path */
+        .solution-slot-input.highlighted-path.solved {
+            background-color: var(--wordle-green);
             border-color: var(--wordle-black); 
-            color: var(--wordle-white); 
+            color: var(--nyt-white);
         }
         .solution-slot-input.slot-incorrect-flash {
-            animation: incorrectFlashWordle 0.6s ease-in-out;
+            animation: incorrectFlashNYT 0.6s ease-in-out;
         }
 
-        @keyframes incorrectFlashWordle { 
-            0%, 100% { background-color: var(--wordle-white); border-color: var(--wordle-light-gray); color: var(--wordle-black); }
-            50% { background-color: var(--wordle-dark-gray); border-color: var(--wordle-dark-gray); color: var(--wordle-white); }
+        @keyframes incorrectFlashNYT {
+            0%, 100% { background-color: var(--nyt-white); border-color: var(--nyt-medium-gray); color: var(--nyt-black); }
+            50% { background-color: var(--wordle-dark-gray-feedback); border-color: var(--wordle-dark-gray-feedback); color: var(--nyt-white); }
         }
 
-        .solution-slot-input.empty-placeholder { 
+        .solution-slot-input.empty-placeholder {
             border-color: transparent;
             background-color: transparent;
-            pointer-events: none; 
+            pointer-events: none;
         }
 
         .message-area {
-            margin-top: 20px; 
-            min-height: 30px; 
-            display: flex; 
+            margin-top: 20px;
+            min-height: 30px;
+            display: flex;
             justify-content: center;
             align-items: center;
         }
         .message-box {
-            padding: 8px 12px; 
+            padding: 8px 15px;
             text-align: center;
             font-weight: 500;
             font-family: 'Inter', sans-serif;
             font-size: 0.9rem;
             border-radius: 4px;
-            background-color: var(--wordle-dark-gray); 
-            color: var(--wordle-white); 
-            max-width: 90%; 
+            color: var(--nyt-black);
+            background-color: var(--nyt-light-gray);
+            border: 1px solid var(--nyt-medium-gray);
+            max-width: 90%;
         }
-        .message-success { 
-            background-color: var(--wordle-green); 
-            color: var(--wordle-white);
+        .message-success {
+            background-color: #e6ffed;
+            border-color: #a7f3d0;
+            color: #047857;
         }
-        .message-error { 
-             background-color: var(--wordle-dark-gray); 
-             color: var(--wordle-white);
+        .message-error {
+             background-color: #fee2e2;
+             border-color: #fca5a5;
+             color: #b91c1c;
         }
 
 
         #end-game-display {
-            margin-top: 30px; 
+            margin-top: 30px;
             padding: 15px;
-            background-color: var(--wordle-white); 
+            background-color: var(--nyt-white);
             text-align: center;
             border-radius: 6px;
         }
         #animated-final-word-target {
             display: flex;
             justify-content: center;
-            gap: 5px; 
+            gap: 5px;
             margin-bottom: 20px;
         }
         .final-word-letter-placeholder {
             font-family: 'Roboto Mono', monospace;
-            font-size: 2rem; 
+            font-size: 2rem;
             font-weight: 700;
-            color: var(--wordle-white); 
+            color: var(--nyt-white); /* Ensures white text */
             background-color: var(--wordle-green);
             border: 2px solid var(--wordle-green);
-            width: 45px; 
+            width: 45px;
             height: 45px;
             display: flex;
             justify-content: center;
             align-items: center;
-            border-radius: 0;
+            border-radius: 2px;
         }
         #fun-fact-area {
             font-family: 'Inter', sans-serif;
             font-size: 0.9rem;
-            color: var(--wordle-dark-gray);
+            color: var(--nyt-dark-gray);
             margin-bottom: 10px;
             padding: 8px;
+            line-height: 1.5;
         }
         #come-back-message {
             font-family: 'Inter', sans-serif;
             font-size: 0.85rem;
-            color: var(--wordle-dark-gray);
+            color: var(--nyt-dark-gray);
             font-weight: 500;
+        }
+        .official-games-link {
+            text-align: center;
+            margin-top: 30px; /* Space above the link */
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            color: var(--nyt-dark-gray);
+        }
+        .official-games-link a {
+            color: var(--nyt-black);
+            text-decoration: underline;
+        }
+        .official-games-link a:hover {
+            color: var(--nyt-accent-yellow); /* Or another NYT hover color */
+        }
+        footer {
+            margin-top: 10px; /* Reduced space as link is now above */
+            padding-top: 15px;
+            border-top: 1px solid var(--nyt-light-gray);
+            text-align: center;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            color: var(--nyt-dark-gray);
         }
     </style>
 </head>
 <body>
     <div class="game-container">
         <header>
-            <h1>Anagrams.</h1>
-            <p>Unscramble words. Highlighted letters form the final solution!</p>
+            <div class="logos-line">
+                <img src="https://i.postimg.cc/qMYxnhxf/times-logo.png" alt="NYT Games Logo" class="nyt-games-pips-logo" onerror="this.alt='Games'; this.style.display='none';">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/The_New_York_Times_logo.png/1200px-The_New_York_Times_logo.png" alt="The New York Times Logo" class="nyt-main-logo" onerror="this.alt='NYT'; this.style.display='none';">
+            </div>
+            <div class="game-title-line">
+                <h1 class="game-actual-title">Anagrams</h1>
+                <span class="beta-tag">(Beta)</span>
+            </div>
+            <p class="game-instructions">Unscramble words. Highlighted letters form the final solution!</p>
             <div class="streak-counter-area">Streak: <span id="streak-count">0</span></div>
         </header>
-        
+
         <div id="game-board" class="game-board">
             </div>
-        
+
         <div id="message-area"></div>
 
         <div id="end-game-display" class="hidden">
@@ -254,27 +321,34 @@
             <div id="fun-fact-area"></div>
             <div id="come-back-message"></div>
         </div>
+        
+        <p class="official-games-link">
+            Play the official NYT Games <a href="https://www.nytimes.com/crosswords" target="_blank" rel="noopener noreferrer">here</a>.
+        </p>
+        <footer>
+            © <span id="current-year"></span> The New York Times Company. All Rights Reserved.
+        </footer>
     </div>
 
     <script>
-        const TARGET_VERTICAL_ALIGNMENT_COLUMN_INDEX = 3; 
+        const TARGET_VERTICAL_ALIGNMENT_COLUMN_INDEX = 3;
 
         const GAME_SETUP = {
             puzzles: [
-                { id: "A", scrambled_text: "ORTOB",  solution: "ROBOT",  vertical_letter_solution_index: 1 }, 
-                { id: "B", scrambled_text: "LEPAT",  solution: "PLATE",  vertical_letter_solution_index: 0 }, 
-                { id: "C", scrambled_text: "TAPYR",  solution: "PARTY",  vertical_letter_solution_index: 3 }, 
-                { id: "D", scrambled_text: "ICED",   solution: "DICE",   vertical_letter_solution_index: 1 }, 
-                { id: "E", scrambled_text: "RBEAC",  solution: "BRACE",  vertical_letter_solution_index: 3 }  
+                { id: "A", scrambled_text: "NSU", solution: "SUN",  vertical_letter_solution_index: 0 },
+                { id: "B", scrambled_text: "PHSI",  solution: "SHIP",  vertical_letter_solution_index: 3 },
+                { id: "C", scrambled_text: "AMRS",  solution: "MARS",  vertical_letter_solution_index: 1 },
+                { id: "D", scrambled_text: "EOKCRT",   solution: "ROCKET",   vertical_letter_solution_index: 2 }, 
+                { id: "E", scrambled_text: "TOEMC",   solution: "COMET",   vertical_letter_solution_index: 3 }
             ],
-            final_vertical_word_solution: "OPTIC",
-            final_vertical_word_description: "Relating to the eye or vision." 
+            final_vertical_word_solution: "SPACE",
+            final_vertical_word_description: "The boundless three-dimensional extent in which objects and events have relative position and direction."
         };
 
         let currentGamePuzzles = [];
-        let activePuzzleRowIndex = -1; 
-        let max_cols_for_solution_slots = 0; 
-        let overall_grid_start_offset = 0; 
+        let activePuzzleRowIndex = -1;
+        let max_cols_for_solution_slots = 0;
+        let overall_grid_start_offset = 0;
         let streakCount = 0;
 
         const gameBoardEl = document.getElementById('game-board');
@@ -284,16 +358,19 @@
         const funFactAreaEl = document.getElementById('fun-fact-area');
         const comeBackMessageEl = document.getElementById('come-back-message');
         const streakCountEl = document.getElementById('streak-count');
+        const currentYearEl = document.getElementById('current-year');
 
 
         function initializeGame() {
             activePuzzleRowIndex = -1;
-            endGameDisplayEl.classList.add('hidden'); 
-            animatedFinalWordTargetEl.innerHTML = ''; 
+            endGameDisplayEl.classList.add('hidden');
+            animatedFinalWordTargetEl.innerHTML = '';
             funFactAreaEl.innerHTML = '';
             comeBackMessageEl.innerHTML = '';
+            if(currentYearEl) currentYearEl.textContent = new Date().getFullYear();
 
-            updateStreakDisplay(); 
+
+            updateStreakDisplay();
 
             currentGamePuzzles = JSON.parse(JSON.stringify(GAME_SETUP.puzzles));
             currentGamePuzzles.forEach((p, idx) => {
@@ -301,7 +378,7 @@
                 p.current_guess_array = Array(p.solution.length).fill('');
                 p.original_scrambled_letters = p.scrambled_text.split('').map((char, i) => ({
                     char: char,
-                    id: `sletter-${idx}-${i}`, 
+                    id: `sletter-${idx}-${i}`,
                     used_for_animation: false,
                     dom_element: null
                 }));
@@ -310,7 +387,7 @@
                 }
                 p.solution_slots_start_col = TARGET_VERTICAL_ALIGNMENT_COLUMN_INDEX - p.vertical_letter_solution_index;
             });
-            
+
             let min_col = Infinity;
             let max_col = -Infinity;
             currentGamePuzzles.forEach(p => {
@@ -318,12 +395,12 @@
                 max_col = Math.max(max_col, p.solution_slots_start_col + p.solution.length - 1);
             });
             max_cols_for_solution_slots = max_col - min_col + 1;
-            overall_grid_start_offset = -min_col; 
+            overall_grid_start_offset = -min_col;
 
             renderGameBoard();
-            messageAreaEl.innerHTML = ''; 
+            messageAreaEl.innerHTML = '';
         }
-        
+
         function clearMessageArea() {
             messageAreaEl.innerHTML = '';
         }
@@ -341,7 +418,7 @@
                 const scrambledArea = document.createElement('div');
                 scrambledArea.classList.add('scrambled-word-display');
                 scrambledArea.id = `scrambled-area-${puzzleIdx}`;
-                
+
                 puzzle.original_scrambled_letters.forEach(sLetter => {
                     const letterSpan = document.createElement('span');
                     letterSpan.classList.add('scrambled-letter');
@@ -350,15 +427,15 @@
                     if (sLetter.used_for_animation) {
                         letterSpan.classList.add('outlined');
                     }
-                    sLetter.dom_element = letterSpan; 
+                    sLetter.dom_element = letterSpan;
                     scrambledArea.appendChild(letterSpan);
                 });
                 puzzleRow.appendChild(scrambledArea);
 
                 const solutionSlotsContainer = document.createElement('div');
                 solutionSlotsContainer.classList.add('solution-slots-container');
-                solutionSlotsContainer.style.gridTemplateColumns = `repeat(${max_cols_for_solution_slots}, 1fr)`;
-                
+                solutionSlotsContainer.style.gridTemplateColumns = `repeat(${max_cols_for_solution_slots}, 38px)`; 
+
                 for (let i = 0; i < max_cols_for_solution_slots; i++) {
                     const current_conceptual_col = i - overall_grid_start_offset;
                     const slotInput = document.createElement('input');
@@ -366,14 +443,15 @@
                     slotInput.maxLength = 1;
                     slotInput.classList.add('solution-slot-input');
 
-                    if (current_conceptual_col >= puzzle.solution_slots_start_col && 
+                    if (current_conceptual_col >= puzzle.solution_slots_start_col &&
                         current_conceptual_col < (puzzle.solution_slots_start_col + puzzle.solution.length)) {
-                        
+
                         const charIndexInSolution = current_conceptual_col - puzzle.solution_slots_start_col;
                         slotInput.id = `input-slot-${puzzleIdx}-${charIndexInSolution}`;
                         slotInput.dataset.puzzleIndex = puzzleIdx;
                         slotInput.dataset.charIndex = charIndexInSolution;
-                        slotInput.value = puzzle.current_guess_array[charIndexInSolution] || '';
+                        slotInput.value = puzzle.current_guess_array && puzzle.current_guess_array.length > charIndexInSolution ? puzzle.current_guess_array[charIndexInSolution] || '' : '';
+
 
                         if (puzzle.is_solved) {
                             slotInput.value = puzzle.solution[charIndexInSolution];
@@ -384,22 +462,22 @@
                             slotInput.addEventListener('input', handleSlotInput);
                             slotInput.addEventListener('keydown', handleSlotKeydown);
                             slotInput.addEventListener('focus', () => {
-                                clearMessageArea(); 
+                                clearMessageArea();
                                 setActivePuzzle(puzzleIdx, charIndexInSolution);
                             });
                         }
-                        
+
                         if (current_conceptual_col === TARGET_VERTICAL_ALIGNMENT_COLUMN_INDEX) {
                             slotInput.classList.add('highlighted-path');
                         }
                         if (puzzle.is_solved && slotInput.classList.contains('highlighted-path')) {
-                            slotInput.classList.add('solved'); 
+                            slotInput.classList.add('solved');
                         }
 
 
                     } else {
-                        slotInput.classList.add('empty-placeholder'); 
-                        slotInput.disabled = true; 
+                        slotInput.classList.add('empty-placeholder');
+                        slotInput.disabled = true;
                     }
                     solutionSlotsContainer.appendChild(slotInput);
                 }
@@ -407,7 +485,7 @@
                 gameBoardEl.appendChild(puzzleRow);
             });
         }
-        
+
         function setActivePuzzle(puzzleIdx, charIdxToFocus = 0) {
             if (activePuzzleRowIndex !== -1 && activePuzzleRowIndex !== puzzleIdx) {
                 const prevActiveRow = document.getElementById(`puzzle-row-${activePuzzleRowIndex}`);
@@ -419,7 +497,7 @@
         }
 
         function handleSlotInput(event) {
-            clearMessageArea(); 
+            clearMessageArea();
             const target = event.target;
             const puzzleIdx = parseInt(target.dataset.puzzleIndex);
             const charIdx = parseInt(target.dataset.charIndex);
@@ -427,7 +505,7 @@
 
             if (puzzle.is_solved) return;
 
-            target.value = target.value.toUpperCase().slice(0,1); 
+            target.value = target.value.toUpperCase().slice(0,1);
             puzzle.current_guess_array[charIdx] = target.value;
 
             if (target.value && charIdx < puzzle.solution.length - 1) {
@@ -438,7 +516,7 @@
         }
 
         function handleSlotKeydown(event) {
-            clearMessageArea(); 
+            clearMessageArea();
             const target = event.target;
             const puzzleIdx = parseInt(target.dataset.puzzleIndex);
             const charIdx = parseInt(target.dataset.charIndex);
@@ -447,19 +525,19 @@
             if (puzzle.is_solved) return;
 
             if (event.key === 'Backspace') {
-                if (!target.value && charIdx > 0) { 
-                    puzzle.current_guess_array[charIdx] = ''; 
+                if (!target.value && charIdx > 0) {
+                    puzzle.current_guess_array[charIdx] = '';
                     const prevSlot = document.getElementById(`input-slot-${puzzleIdx}-${charIdx - 1}`);
                     if (prevSlot && !prevSlot.disabled) {
                         prevSlot.focus();
-                        prevSlot.value = ''; 
+                        prevSlot.value = '';
                         puzzle.current_guess_array[charIdx-1] = '';
                     }
-                } else { 
-                    puzzle.current_guess_array[charIdx] = ''; 
+                } else {
+                    puzzle.current_guess_array[charIdx] = '';
                 }
             } else if (event.key === 'Enter') {
-                event.preventDefault(); 
+                event.preventDefault();
                 checkWordSolution(puzzleIdx);
             } else if (event.key.length === 1 && event.key.match(/[a-z]/i) && charIdx < puzzle.solution.length - 1 && target.value) {
                 const nextSlot = document.getElementById(`input-slot-${puzzleIdx}-${charIdx + 1}`);
@@ -483,10 +561,10 @@
 
             const guessedWord = puzzle.current_guess_array.join('');
             const puzzleRowEl = document.getElementById(`puzzle-row-${puzzleIdx}`);
-            
+
             if (guessedWord === puzzle.solution) {
                 puzzle.is_solved = true;
-                
+
                 for(let i=0; i < puzzle.solution.length; i++) {
                     const slotInput = document.getElementById(`input-slot-${puzzleIdx}-${i}`);
                     if(slotInput) {
@@ -505,7 +583,7 @@
                             break;
                         }
                     }
-                    if (sLetterIndexToAnimate === -1) { 
+                    if (sLetterIndexToAnimate === -1) {
                         for(let j=0; j < puzzle.original_scrambled_letters.length; j++) {
                             if (!puzzle.original_scrambled_letters[j].used_for_animation) {
                                 sLetterIndexToAnimate = j;
@@ -520,7 +598,7 @@
                         const sLetterDomEl = sLetterObj.dom_element;
                         const targetSlotElement = document.getElementById(`input-slot-${puzzleIdx}-${i}`);
                         if (sLetterDomEl && targetSlotElement) {
-                            animationPromises.push(animateLetter(sLetterDomEl, targetSlotElement, i * 50)); 
+                            animationPromises.push(animateLetter(sLetterDomEl, targetSlotElement, i * 50));
                         }
                     }
                 }
@@ -531,8 +609,8 @@
                 checkAllSolved();
 
             } else {
-                displayMessage('Incorrect', 'error'); 
-                streakCount = 0; 
+                displayMessage('Incorrect', 'error');
+                streakCount = 0;
                 updateStreakDisplay();
                 for(let i=0; i < puzzle.solution.length; i++) {
                     const slotInput = document.getElementById(`input-slot-${puzzleIdx}-${i}`);
@@ -544,33 +622,33 @@
             }
         }
 
-        function animateLetter(letterEl, targetSlotEl, delay = 0) { 
+        function animateLetter(letterEl, targetSlotEl, delay = 0) {
             return new Promise(resolve => {
                 setTimeout(() => {
                     const startRect = letterEl.getBoundingClientRect();
                     const targetRect = targetSlotEl.getBoundingClientRect();
-                    
-                    const movingLetterClone = document.createElement('span'); 
-                    movingLetterClone.textContent = letterEl.textContent; 
-                    movingLetterClone.classList.add('moving-letter-clone'); 
-                    document.body.appendChild(movingLetterClone); 
-                    
+
+                    const movingLetterClone = document.createElement('span');
+                    movingLetterClone.textContent = letterEl.textContent;
+                    movingLetterClone.classList.add('moving-letter-clone');
+                    document.body.appendChild(movingLetterClone);
+
                     movingLetterClone.style.left = `${startRect.left}px`;
                     movingLetterClone.style.top = `${startRect.top}px`;
                     movingLetterClone.style.width = `${startRect.width}px`;
                     movingLetterClone.style.height = `${startRect.height}px`;
 
-                    letterEl.classList.add('outlined'); 
-                    
-                    void movingLetterClone.offsetWidth; 
+                    letterEl.classList.add('outlined');
+
+                    void movingLetterClone.offsetWidth;
 
                     const deltaX = targetRect.left - startRect.left;
                     const deltaY = targetRect.top - startRect.top;
                     movingLetterClone.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-                    
+
                     movingLetterClone.addEventListener('transitionend', function onTransitionEnd() {
                         movingLetterClone.removeEventListener('transitionend', onTransitionEnd);
-                        movingLetterClone.remove(); 
+                        movingLetterClone.remove();
                         resolve();
                     }, { once: true });
                 }, delay);
@@ -582,7 +660,7 @@
         }
 
         async function animateFinalWordSequence() {
-            animatedFinalWordTargetEl.innerHTML = ''; 
+            animatedFinalWordTargetEl.innerHTML = '';
             funFactAreaEl.innerHTML = '';
             comeBackMessageEl.innerHTML = '';
             endGameDisplayEl.classList.remove('hidden');
@@ -594,17 +672,17 @@
             for (let i = 0; i < finalWord.length; i++) {
                 const placeholder = document.createElement('span');
                 placeholder.classList.add('final-word-letter-placeholder');
-                placeholder.innerHTML = '&nbsp;'; 
+                placeholder.innerHTML = '&nbsp;';
                 animatedFinalWordTargetEl.appendChild(placeholder);
                 targetLetterPlaceholders.push(placeholder);
             }
-            
-            await new Promise(resolve => setTimeout(resolve, 50)); 
+
+            await new Promise(resolve => setTimeout(resolve, 50));
 
 
             for (let i = 0; i < finalWord.length; i++) {
                 const letterToAnimate = finalWord[i];
-                const sourcePuzzle = currentGamePuzzles[i]; 
+                const sourcePuzzle = currentGamePuzzles[i];
                 const sourceLetterIndexInSolution = sourcePuzzle.vertical_letter_solution_index;
                 const sourceSlotEl = document.getElementById(`input-slot-${i}-${sourceLetterIndexInSolution}`);
                 const targetPlaceholderEl = targetLetterPlaceholders[i];
@@ -612,11 +690,11 @@
                 if (sourceSlotEl && targetPlaceholderEl) {
                     const movingClone = document.createElement('span');
                     movingClone.textContent = letterToAnimate;
-                    movingClone.classList.add('moving-letter-clone'); 
+                    movingClone.classList.add('moving-letter-clone');
                     movingClone.style.backgroundColor = 'var(--wordle-green)';
-                    movingClone.style.color = 'var(--wordle-white)';
+                    movingClone.style.color = 'var(--nyt-white)'; // Explicitly white text for final animation
                     movingClone.style.border = '2px solid var(--wordle-green)';
-                    movingClone.style.width = '45px'; 
+                    movingClone.style.width = '45px';
                     movingClone.style.height = '45px';
                     movingClone.style.display = 'flex';
                     movingClone.style.justifyContent = 'center';
@@ -631,12 +709,12 @@
 
                     movingClone.style.left = `${startRect.left}px`;
                     movingClone.style.top = `${startRect.top}px`;
-                    
-                    void movingClone.offsetWidth; 
+
+                    void movingClone.offsetWidth;
 
                     const deltaX = endRect.left + (endRect.width / 2) - (startRect.left + startRect.width / 2);
                     const deltaY = endRect.top + (endRect.height / 2) - (startRect.top + startRect.height / 2);
-                    
+
                     movingClone.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
 
                     const promise = new Promise(resolve => {
@@ -644,14 +722,14 @@
                             movingClone.removeEventListener('transitionend', onEnd);
                             targetPlaceholderEl.textContent = letterToAnimate;
                             targetPlaceholderEl.style.backgroundColor = 'var(--wordle-green)';
-                            targetPlaceholderEl.style.color = 'var(--wordle-white)';
+                            targetPlaceholderEl.style.color = 'var(--nyt-white)';
                             targetPlaceholderEl.style.border = '2px solid var(--wordle-green)';
                             movingClone.remove();
                             resolve();
                         }, { once: true });
                     });
                     letterAnimationPromises.push(promise);
-                    await new Promise(r => setTimeout(r, 200)); 
+                    await new Promise(r => setTimeout(r, 200));
                 }
             }
 
@@ -661,8 +739,11 @@
                  funFactAreaEl.textContent = "Fun Fact: The human eye can distinguish about 10 million different colors!";
             } else if (GAME_SETUP.final_vertical_word_solution === "POTATOE"){
                  funFactAreaEl.textContent = "Fun Fact: Potatoes were the first vegetable grown in space, aboard the Space Shuttle Columbia in 1995!";
-            } else {
-                funFactAreaEl.textContent = "Great job solving the puzzle!"; 
+            } else if (GAME_SETUP.final_vertical_word_solution === "SPACE"){
+                 funFactAreaEl.textContent = "Fun Fact: Space is not completely empty; it contains a low density of particles, predominantly plasma of hydrogen and helium.";
+            }
+             else {
+                funFactAreaEl.textContent = "Great job solving the puzzle!";
             }
             comeBackMessageEl.textContent = "Come back tomorrow for a new puzzle!";
         }
@@ -672,15 +753,15 @@
             if (currentGamePuzzles.every(p => p.is_solved)) {
                 streakCount++;
                 updateStreakDisplay();
-                animateFinalWordSequence(); 
+                animateFinalWordSequence();
             }
         }
 
         function displayMessage(text, type = 'info') {
-            messageAreaEl.innerHTML = ''; 
+            messageAreaEl.innerHTML = '';
             const messageDiv = document.createElement('div');
             messageDiv.textContent = text;
-            messageDiv.classList.remove('message-success', 'message-error', 'message-info'); 
+            messageDiv.classList.remove('message-success', 'message-error', 'message-info');
             messageDiv.classList.add('message-box', `message-${type}`);
             messageAreaEl.appendChild(messageDiv);
         }
@@ -689,4 +770,3 @@
     </script>
 </body>
 </html>
-
